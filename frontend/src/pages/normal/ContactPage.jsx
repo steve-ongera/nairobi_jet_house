@@ -1,7 +1,1 @@
-import React from 'react';
-
-const ContactPage = () => {
-  return <div>ContactPage</div>;
-};
-
-export default ContactPage;
+export { ContactPage as default } from './FleetPage';

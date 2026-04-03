@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { api, authApi } from './services/api';
+import { authApi } from './services/api';
 
 // ── Normal Pages ──────────────────────────────────────────────────────────────
 import HomePage            from './pages/normal/HomePage';

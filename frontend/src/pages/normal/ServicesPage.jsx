@@ -1,7 +1,1 @@
-import React from 'react';
-
-const ServicesPage = () => {
-  return <div>ServicesPage</div>;
-};
-
-export default ServicesPage;
+export { ServicesPage as default } from './FleetPage';

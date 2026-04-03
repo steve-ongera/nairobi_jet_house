@@ -1,7 +1,1 @@
-import React from 'react';
-
-const MembershipPublicPage = () => {
-  return <div>MembershipPublicPage</div>;
-};
-
-export default MembershipPublicPage;
+export { MembershipPublicPage as default } from './FleetPage';
