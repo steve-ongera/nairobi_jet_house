@@ -243,4 +243,12 @@ export const priceCalcApi = {
   calculate: data => post('/admin/price-calculator/calculate/', data),
 };
 
+// ── Convenience exports for HomePage ─────────────────────────────────────────
+export const getAircraft         = params => fleetApi.aircraftList(params).then(r => r.data);
+export const getYachts           = params => fleetApi.yachtList(params).then(r => r.data);
+export const searchAirports      = query  => fleetApi.airports({ search: query }).then(r => r.data);
+export const createFlightBooking = data   => bookingApi.createFlight(data).then(r => r.data);
+export const createYachtCharter  = data   => bookingApi.createYacht(data).then(r => r.data);
+export const createLeaseInquiry  = data   => inquiryApi.lease(data).then(r => r.data);
+
 export default client;

@@ -1,206 +1,715 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import PublicNavbar from '../../components/common/PublicNavbar';
-import PublicFooter from '../../components/common/PublicFooter';
-import { fleetApi } from '../../services/api';
+import { Link } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import PublicNavbar from '../../components/common/PublicNavbar'
+import PublicFooter from '../../components/common/PublicFooter'
+import {
+  getAircraft, getYachts,
+  createFlightBooking, createYachtCharter, createLeaseInquiry,
+  searchAirports,
+} from '../../services/api'
 
-const stats = [
-  { value: '140+', label: 'Countries Served' },
-  { value: '320+', label: 'Aircraft in Fleet' },
-  { value: '18K+', label: 'Flights Completed' },
-  { value: '24/7', label: 'Concierge Support' },
-];
+/* ─── Data ───────────────────────────────────────────────────────────────────── */
+const STATS = [
+  { value: '187',    label: 'Countries Served',   icon: 'bi-globe2' },
+  { value: '2,400+', label: 'Aircraft Available',  icon: 'bi-airplane' },
+  { value: '24/7',   label: 'Concierge Access',    icon: 'bi-headset' },
+  { value: '< 4hrs', label: 'Avg Response Time',   icon: 'bi-clock' },
+]
 
-const services = [
-  { icon: 'bi-airplane', title: 'Private Jet Charter', desc: 'One-way, round-trip or multi-leg intercontinental flights tailored to your schedule.', link: '/book-flight' },
-  { icon: 'bi-anchor', title: 'Superyacht Charter', desc: 'Sail the Indian Ocean, Mediterranean and beyond in world-class superyachts.', link: '/book-yacht' },
-  { icon: 'bi-collection', title: 'Fleet Leasing', desc: 'Monthly, quarterly or multi-year leasing of aircraft and yachts for corporate clients.', link: '/services' },
-  { icon: 'bi-truck', title: 'Air Cargo', desc: 'Urgent freight, perishables, pharmaceuticals, and oversized cargo globally.', link: '/services' },
-  { icon: 'bi-bar-chart-steps', title: 'Aircraft Sales', desc: 'Buy, sell or trade aircraft with our global aviation brokers.', link: '/services' },
-  { icon: 'bi-stars', title: 'VIP Concierge', desc: 'Ground transport, catering, hotel, visas and every detail arranged for you.', link: '/services' },
-];
+const SERVICES = [
+  { icon: 'bi-airplane',          title: 'Private Jet Charter', tagline: 'Airport to airport, worldwide',       description: 'Book a private jet from any airport to any destination worldwide. Whether you need a light jet for a regional hop or an ultra-long-range aircraft for intercontinental travel, our team finds the right aircraft at the right price — instantly.',                                                                                                link: '/book-flight',    cta: 'Book a Flight' },
+  { icon: 'bi-water',             title: 'Superyacht Charter',  tagline: 'Mediterranean, Caribbean & beyond',  description: 'Charter a superyacht for a weekend, a week, or the entire season. From intimate sailing yachts to 130-metre flagship vessels, our fleet covers every ocean. Full crew, bespoke itineraries, and world-class provisioning included.',                                                                                                 link: '/yacht-charter',  cta: 'Charter a Yacht' },
+  { icon: 'bi-file-earmark-text', title: 'Long-Term Leasing',  tagline: 'Dedicated aircraft & yacht programs', description: 'For frequent travellers and corporations, a dedicated lease offers unmatched availability and significant cost savings over ad-hoc charter. Monthly, quarterly, and multi-year programs available for aircraft and yachts.',                                                                                                           link: '/leasing',        cta: 'Explore Leasing' },
+  { icon: 'bi-send',              title: 'Flight Inquiry',      tagline: 'Explore options, no commitment',      description: "Not sure of your dates or route? Send a general inquiry and one of our aviation specialists will design the perfect itinerary for you. We'll present aircraft options, pricing estimates, and routing alternatives within hours.",                                                                                                link: '/flight-inquiry', cta: 'Send Inquiry' },
+]
 
-const destinations = [
-  { city: 'Dubai', country: 'UAE', code: 'DXB', bg: 'linear-gradient(135deg,#0B1D3A,#1E3E72)' },
-  { city: 'London', country: 'UK', code: 'LHR', bg: 'linear-gradient(135deg,#1A3260,#0B1D3A)' },
-  { city: 'Paris', country: 'France', code: 'CDG', bg: 'linear-gradient(135deg,#26241F,#3A3832)' },
-  { city: 'New York', country: 'USA', code: 'JFK', bg: 'linear-gradient(135deg,#071428,#152D56)' },
-  { city: 'Cape Town', country: 'South Africa', code: 'CPT', bg: 'linear-gradient(135deg,#1D6E47,#0B1D3A)' },
-  { city: 'Singapore', country: 'Singapore', code: 'SIN', bg: 'linear-gradient(135deg,#B83230,#0B1D3A)' },
-];
+const WHY_US = [
+  { icon: 'bi-shield-check', title: 'ARGUS Platinum Rated',  desc: 'Every operator in our network holds the highest safety certification in private aviation. Your safety is never compromised.' },
+  { icon: 'bi-person-check', title: 'No Account Required',   desc: 'Submit a booking request in minutes with no registration, no membership fee, and no subscription. Luxury without the friction.' },
+  { icon: 'bi-cash-coin',    title: 'Transparent Pricing',   desc: 'No hidden fees, no fuel surcharge surprises. The price you are quoted is the price you pay — with full breakdown provided.' },
+  { icon: 'bi-headset',      title: '24 / 7 Concierge',      desc: "Our team doesn't sleep. Available around the clock by phone, email, or WhatsApp in English, French, Arabic, and Mandarin." },
+  { icon: 'bi-geo-alt',      title: 'Remote Destinations',   desc: "We access airports others can't — private strips, short runways, high-altitude destinations. The world is genuinely open to you." },
+  { icon: 'bi-star',         title: 'Tailored Experience',   desc: 'From in-flight catering curated by Michelin-starred chefs to seamless ground transport and hotel coordination — every detail attended to.' },
+]
 
-export default function HomePage() {
-  const [aircraft, setAircraft] = useState([]);
+const PROCESS = [
+  { step: '01', icon: 'bi-pencil-square',  title: 'Submit Your Request',     desc: 'Tell us your route, dates, and passenger count using our simple booking form. Takes under three minutes with no account needed.' },
+  { step: '02', icon: 'bi-envelope-check', title: 'Receive Your Quote',      desc: 'Our specialists review available aircraft and present a tailored quote within two to four hours, complete with aircraft specifications and pricing.' },
+  { step: '03', icon: 'bi-airplane-fill',  title: 'Fly in Absolute Comfort', desc: 'Confirm your booking and relax. We handle all logistics — from ground transport to in-flight dining preferences and beyond.' },
+]
+
+const LEASE_DURATIONS = [
+  { value: 'monthly',    label: 'Monthly' },
+  { value: 'quarterly',  label: 'Quarterly (3 months)' },
+  { value: 'annual',     label: 'Annual (12 months)' },
+  { value: 'multi_year', label: 'Multi-Year' },
+]
+
+/* ─── Hero Video Background ──────────────────────────────────────────────────── */
+const HERO_VIDEOS = [
+  '/video-one.mp4', '/video-two.mp4', '/video-three.mp4',
+  '/video-four.mp4', '/video-five.mp4', '/video-six.mp4', '/video-seven.mp4',
+]
+
+function HeroVideoBackground() {
+  const [current, setCurrent] = useState(0)
+  const [next, setNext]       = useState(null)
+  const [fading, setFading]   = useState(false)
+  const currentRef            = useRef(null)
+  const nextRef               = useRef(null)
+  const timerRef              = useRef(null)
+
+  const advance = useCallback(() => {
+    const nextIdx = (current + 1) % HERO_VIDEOS.length
+    setNext(nextIdx); setFading(true)
+  }, [current])
 
   useEffect(() => {
-    fleetApi.aircraftList({ page_size: 3 })
-      .then(r => setAircraft(r.data.results || r.data))
-      .catch(() => {});
-  }, []);
+    if (!fading || next === null) return
+    const t = setTimeout(() => { setCurrent(next); setNext(null); setFading(false) }, 1000)
+    return () => clearTimeout(t)
+  }, [fading, next])
+
+  useEffect(() => {
+    timerRef.current = setTimeout(advance, 6000)
+    return () => clearTimeout(timerRef.current)
+  }, [current, advance])
+
+  useEffect(() => { if (currentRef.current) currentRef.current.play().catch(() => {}) }, [current])
+  useEffect(() => { if (nextRef.current) nextRef.current.play().catch(() => {}) }, [next])
+
+  const videoStyle = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+  }
 
   return (
-    <>
-      <PublicNavbar dark />
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
+      <video
+        key={`c-${current}`}
+        ref={currentRef}
+        src={HERO_VIDEOS[current]}
+        style={{ ...videoStyle, opacity: fading ? 0 : 1, transition: 'opacity 1s ease-in-out', zIndex: 1 }}
+        muted playsInline loop autoPlay
+      />
+      {next !== null && (
+        <video
+          key={`n-${next}`}
+          ref={nextRef}
+          src={HERO_VIDEOS[next]}
+          style={{ ...videoStyle, opacity: fading ? 1 : 0, transition: 'opacity 1s ease-in-out', zIndex: 2 }}
+          muted playsInline loop autoPlay
+        />
+      )}
+    </div>
+  )
+}
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="hero" style={{ paddingTop: 0 }}>
-        <div
-          className="hero-bg"
-          style={{
-            background: 'linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 40%, #1E3E72 100%)',
-          }}
-        >
-          {/* Decorative rings */}
-          <div style={{
-            position: 'absolute', right: '5%', top: '15%',
-            width: '45vw', height: '45vw',
-            border: '1px solid rgba(201,168,76,0.12)',
-            borderRadius: '50%', pointerEvents: 'none',
-          }} />
-          <div style={{
-            position: 'absolute', right: '12%', top: '22%',
-            width: '30vw', height: '30vw',
-            border: '1px solid rgba(201,168,76,0.08)',
-            borderRadius: '50%', pointerEvents: 'none',
-          }} />
-        </div>
-        <div className="hero-overlay" />
+/* ─── Airport Picker ─────────────────────────────────────────────────────────── */
+function AirportPicker({ label, value, onChange, required }) {
+  const [query, setQuery]     = useState('')
+  const [results, setResults] = useState([])
+  const [busy, setBusy]       = useState(false)
+  const [open, setOpen]       = useState(false)
 
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div className="hero-content fade-up" style={{ maxWidth: 720, padding: '10vh 0 6vh' }}>
-            <span className="eyebrow">Africa's Premier Aviation Platform</span>
-            <h1 style={{ color: 'var(--white)', fontSize: 'clamp(2.6rem,5.5vw,4.4rem)', lineHeight: 1.08, marginBottom: '1.4rem' }}>
-              The World Awaits.<br />
-              <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Fly Without Limits.</span>
-            </h1>
-            <p className="lead delay-200" style={{ color: 'rgba(255,255,255,0.72)', maxWidth: 560, marginBottom: '2.25rem' }}>
-              Charter private jets, superyachts and bespoke concierge services across Africa, Europe,
-              the Middle East and every continent — from Wilson Airport to the world.
-            </p>
-            <div className="hero-ctas delay-300">
-              <Link to="/book-flight" className="btn btn-gold btn-lg">
-                <i className="bi bi-airplane-fill" /> Charter a Jet
-              </Link>
-              <Link to="/fleet" className="btn btn-outline-gold btn-lg">
-                <i className="bi bi-collection" /> Explore Fleet
-              </Link>
+  useEffect(() => { setQuery(value ? `${value.city} (${value.code})` : '') }, [value])
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (query.length < 2) { setResults([]); return }
+      setBusy(true)
+      try { setResults((await searchAirports(query)).results || []) }
+      catch { setResults([]) }
+      finally { setBusy(false) }
+    }, 280)
+    return () => clearTimeout(t)
+  }, [query])
+
+  return (
+    <div className="form-group" style={{ position: 'relative' }}>
+      {label && <label className="form-label">{label}{required && <span className="req"> *</span>}</label>}
+      <div style={{ position: 'relative' }}>
+        <i className="bi bi-geo-alt" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }} />
+        <input className="form-control" style={{ paddingLeft: '2.25rem' }} value={query}
+          placeholder="City or airport code"
+          onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange(null) }}
+          onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
+        {busy && <span className="spinner" style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />}
+      </div>
+      {open && results.length > 0 && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 700, background: 'var(--white)', border: '1.5px solid var(--gray-200)', borderTop: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: 200, overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
+          {results.map(a => (
+            <div key={a.id} onMouseDown={() => { onChange(a); setQuery(`${a.city} (${a.code})`); setOpen(false) }}
+              style={{ padding: '0.6rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--gray-100)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
+              onMouseLeave={e => e.currentTarget.style.background = ''}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 3 }}>{a.code}</span>
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--navy)' }}>{a.name}</span>
+              </div>
+              <div style={{ fontSize: '0.73rem', color: 'var(--gray-400)', paddingLeft: 42 }}>{a.city}, {a.country}</div>
             </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
-            {/* Quick track */}
-            <div className="delay-400" style={{
-              marginTop: '2.5rem',
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '0.85rem 1.25rem',
-              maxWidth: 520, backdropFilter: 'blur(8px)',
-            }}>
-              <i className="bi bi-search" style={{ color: 'var(--gold)', fontSize: '1rem' }} />
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.84rem' }}>Track booking reference…</span>
-              <Link to="/track" className="btn btn-gold btn-sm" style={{ marginLeft: 'auto', flexShrink: 0 }}>
-                Track
-              </Link>
+/* ─── Modal Shell ────────────────────────────────────────────────────────────── */
+function Modal({ open, onClose, title, subtitle, icon, children, maxWidth = 680 }) {
+  useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; return () => { document.body.style.overflow = '' } }, [open])
+  useEffect(() => { const h = e => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', h); return () => document.removeEventListener('keydown', h) }, [onClose])
+  if (!open) return null
+  return (
+    <>
+      <style>{`@keyframes modalPop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}`}</style>
+      <div onClick={e => e.target === e.currentTarget && onClose()}
+        style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(11,29,58,0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+        <div style={{ background: 'var(--white)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'modalPop 0.25s var(--ease)' }}>
+          <div style={{ padding: '1.4rem 1.75rem', borderBottom: '1px solid var(--gray-100)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className={`bi ${icon}`} style={{ fontSize: '1.2rem', color: 'var(--gold)' }} />
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 600, color: 'var(--navy)', lineHeight: 1.2 }}>{title}</div>
+                {subtitle && <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)', marginTop: 3 }}>{subtitle}</div>}
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)', fontSize: '1.2rem', padding: '0.25rem', lineHeight: 1, flexShrink: 0 }}>
+              <i className="bi bi-x-lg" />
+            </button>
+          </div>
+          <div style={{ overflowY: 'auto', padding: '1.6rem 1.75rem', flex: 1 }}>{children}</div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ─── Success State ──────────────────────────────────────────────────────────── */
+function SuccessState({ title, message, reference, onNew, onClose }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+      <div style={{ width: 64, height: 64, background: '#EBF7F1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', fontSize: '1.75rem', color: 'var(--green)' }}>
+        <i className="bi bi-check-lg" />
+      </div>
+      <h3 style={{ marginBottom: '0.6rem' }}>{title}</h3>
+      <p style={{ lineHeight: 1.8, marginBottom: '1.5rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>{message}</p>
+      {reference && (
+        <div style={{ background: 'var(--gray-50)', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.75rem', textAlign: 'left' }}>
+          <div style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '0.4rem' }}>Reference Number</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '0.87rem', color: 'var(--navy)', wordBreak: 'break-all', fontWeight: 600 }}>{reference}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)', marginTop: '0.35rem' }}>Save this to track your booking at <strong>/track</strong></div>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-outline-navy btn-sm" onClick={onNew}><i className="bi bi-arrow-counterclockwise" /> New Request</button>
+        <button className="btn btn-navy btn-sm" onClick={onClose}><i className="bi bi-x" /> Close</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Asset Banner ───────────────────────────────────────────────────────────── */
+function AssetBanner({ asset, type }) {
+  if (!asset) return null
+  const isAc = type === 'aircraft'
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--blue-soft)', border: '1px solid #BED1EF', borderRadius: 'var(--radius)', padding: '0.9rem 1.1rem', marginBottom: '1.6rem' }}>
+      <i className={`bi ${isAc ? 'bi-airplane-fill' : 'bi-water'}`} style={{ fontSize: '1.3rem', color: 'var(--navy)', flexShrink: 0 }} />
+      <div>
+        <div style={{ fontWeight: 600, color: 'var(--navy)', fontSize: '0.92rem' }}>{asset.name}</div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--gray-600)', marginTop: 2 }}>
+          {isAc
+            ? `${asset.category_display} · ${asset.passenger_capacity} passengers · ${asset.range_km?.toLocaleString()} km range`
+            : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · ${asset.crew_count} crew`}
+          {isAc  && asset.hourly_rate_usd && ` · $${parseInt(asset.hourly_rate_usd).toLocaleString()}/hr`}
+          {!isAc && asset.daily_rate_usd  && ` · $${parseInt(asset.daily_rate_usd).toLocaleString()}/day`}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FormSection({ icon, children }) {
+  return (
+    <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--navy)', marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+      <i className={`bi ${icon}`} style={{ color: 'var(--gold)' }} />{children}
+    </div>
+  )
+}
+
+/* ─── Book Flight Modal ──────────────────────────────────────────────────────── */
+function BookFlightModal({ open, onClose, aircraft: asset }) {
+  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', trip_type: 'one_way', passenger_count: 1, departure_date: '', departure_time: '', return_date: '', catering_requested: false, ground_transport_requested: false, special_requests: '' })
+  const [form, setForm]       = useState(blank)
+  const [origin, setOrigin]   = useState(null)
+  const [dest, setDest]       = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(null)
+  const [error, setError]     = useState(null)
+
+  const set   = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const reset = ()     => { setForm(blank()); setOrigin(null); setDest(null); setSuccess(null); setError(null) }
+  const close = ()     => { reset(); onClose() }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!origin || !dest) { setError('Please select origin and destination airports.'); return }
+    setLoading(true); setError(null)
+    try {
+      const res = await createFlightBooking({ ...form, origin: origin.id, destination: dest.id, aircraft: asset?.id, return_date: form.trip_type === 'round_trip' ? form.return_date : undefined })
+      setSuccess(res)
+    } catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={close} icon="bi-airplane" title={`Book — ${asset?.name || 'Aircraft'}`} subtitle={asset ? `${asset.category_display} · up to ${asset.passenger_capacity} passengers` : ''} maxWidth={700}>
+      {success ? <SuccessState title="Flight Request Submitted" message={success.message || 'Our specialists will contact you with a personalised quote within 2–4 hours.'} reference={success.booking?.reference} onNew={reset} onClose={close} /> : (
+        <form onSubmit={submit}>
+          <AssetBanner asset={asset} type="aircraft" />
+          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+          <FormSection icon="bi-person">Your Details</FormSection>
+          <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} placeholder="John Smith" /></div>
+            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} placeholder="john@company.com" /></div>
+            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} placeholder="+254 700 000 000" /></div>
+            <div className="form-group">
+              <label className="form-label">Passengers <span className="req">*</span></label>
+              <input className="form-control" type="number" min={1} max={asset?.passenger_capacity || 400} required value={form.passenger_count} onChange={e => set('passenger_count', parseInt(e.target.value))} />
+              {asset && <span className="form-hint">Max {asset.passenger_capacity} on this aircraft</span>}
             </div>
           </div>
+          <FormSection icon="bi-map">Route &amp; Schedule</FormSection>
+          <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            {[['one_way','One Way'],['round_trip','Round Trip'],['multi_leg','Multi-Leg']].map(([v, l]) => (
+              <button key={v} type="button" onClick={() => set('trip_type', v)} style={{ padding: '0.35rem 0.85rem', fontSize: '0.76rem', fontWeight: 500, borderRadius: 20, border: `1.5px solid ${form.trip_type === v ? 'var(--navy)' : 'var(--gray-200)'}`, background: form.trip_type === v ? 'var(--navy)' : 'transparent', color: form.trip_type === v ? 'white' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)' }}>{l}</button>
+            ))}
+          </div>
+          <div className="form-grid" style={{ marginBottom: '1rem' }}>
+            <AirportPicker label="From" value={origin} onChange={setOrigin} required />
+            <AirportPicker label="To" value={dest} onChange={setDest} required />
+            <div className="form-group"><label className="form-label">Departure Date <span className="req">*</span></label><input className="form-control" type="date" required value={form.departure_date} min={new Date().toISOString().split('T')[0]} onChange={e => set('departure_date', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Preferred Time</label><input className="form-control" type="time" value={form.departure_time} onChange={e => set('departure_time', e.target.value)} /></div>
+          </div>
+          {form.trip_type === 'round_trip' && (
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">Return Date <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.return_date} min={form.departure_date || new Date().toISOString().split('T')[0]} onChange={e => set('return_date', e.target.value)} />
+            </div>
+          )}
+          <FormSection icon="bi-stars">Add-ons</FormSection>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            {[['catering_requested','bi-cup-hot','In-Flight Catering'],['ground_transport_requested','bi-car-front','Ground Transport']].map(([k, icon, label]) => (
+              <button key={k} type="button" onClick={() => set(k, !form[k])} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.45rem 0.9rem', fontSize: '0.8rem', fontWeight: 500, borderRadius: 20, border: `1.5px solid ${form[k] ? 'var(--navy)' : 'var(--gray-200)'}`, background: form[k] ? 'var(--blue-soft)' : 'transparent', color: form[k] ? 'var(--navy)' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)' }}>
+                <i className={`bi ${icon}`} style={{ color: form[k] ? 'var(--navy)' : 'var(--gold)' }} />{label}{form[k] && <i className="bi bi-check" />}
+              </button>
+            ))}
+          </div>
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+            <label className="form-label">Special Requests</label>
+            <textarea className="form-control" style={{ minHeight: 75 }} value={form.special_requests} onChange={e => set('special_requests', e.target.value)} placeholder="Dietary requirements, seating preferences, special occasions…" />
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
+            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Flight Request</>}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  )
+}
+
+/* ─── Charter Yacht Modal ────────────────────────────────────────────────────── */
+function CharterYachtModal({ open, onClose, yacht: asset }) {
+  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', departure_port: '', destination_port: '', charter_start: '', charter_end: '', guest_count: 2, itinerary_description: '', special_requests: '' })
+  const [form, setForm]       = useState(blank)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(null)
+  const [error, setError]     = useState(null)
+
+  const set   = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const reset = ()     => { setForm(blank()); setSuccess(null); setError(null) }
+  const close = ()     => { reset(); onClose() }
+
+  const nights = () => {
+    if (form.charter_start && form.charter_end) {
+      const n = (new Date(form.charter_end) - new Date(form.charter_start)) / 86400000
+      return n > 0 ? n : null
+    }
+    return null
+  }
+
+  const submit = async (e) => {
+    e.preventDefault(); setLoading(true); setError(null)
+    try { const res = await createYachtCharter({ ...form, yacht: asset?.id }); setSuccess(res) }
+    catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={close} icon="bi-water" title={`Charter — ${asset?.name || 'Yacht'}`} subtitle={asset ? `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests` : ''} maxWidth={700}>
+      {success ? <SuccessState title="Charter Request Received" message={success.message || 'Our yacht specialists will respond with a tailored proposal within 4 hours.'} reference={success.charter?.reference} onNew={reset} onClose={close} /> : (
+        <form onSubmit={submit}>
+          <AssetBanner asset={asset} type="yacht" />
+          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+          <FormSection icon="bi-person">Contact Details</FormSection>
+          <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} /></div>
+            <div className="form-group">
+              <label className="form-label">Number of Guests <span className="req">*</span></label>
+              <input className="form-control" type="number" min={1} max={asset?.guest_capacity || 200} required value={form.guest_count} onChange={e => set('guest_count', parseInt(e.target.value))} />
+              {asset && <span className="form-hint">Max {asset.guest_capacity} guests on this vessel</span>}
+            </div>
+          </div>
+          <FormSection icon="bi-map">Voyage Details</FormSection>
+          <div className="form-grid" style={{ marginBottom: '1rem' }}>
+            <div className="form-group"><label className="form-label">Departure Port <span className="req">*</span></label><input className="form-control" required value={form.departure_port} onChange={e => set('departure_port', e.target.value)} placeholder="e.g. Monaco, Mykonos, Miami" /></div>
+            <div className="form-group"><label className="form-label">Destination Port</label><input className="form-control" value={form.destination_port} onChange={e => set('destination_port', e.target.value)} placeholder="Or return to departure port" /></div>
+            <div className="form-group"><label className="form-label">Charter Start <span className="req">*</span></label><input className="form-control" type="date" required value={form.charter_start} min={new Date().toISOString().split('T')[0]} onChange={e => set('charter_start', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Charter End <span className="req">*</span></label><input className="form-control" type="date" required value={form.charter_end} min={form.charter_start || new Date().toISOString().split('T')[0]} onChange={e => set('charter_end', e.target.value)} /></div>
+          </div>
+          {nights() && (
+            <div style={{ background: 'var(--gold-pale)', border: '1px solid #E6CFA0', borderRadius: 'var(--radius)', padding: '0.65rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#7A5C22', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-moon-stars" />
+              <strong>{nights()} night{nights() > 1 ? 's' : ''}</strong>
+              {asset?.daily_rate_usd && <span style={{ color: '#9A7530' }}> — estimated ${(nights() * parseInt(asset.daily_rate_usd)).toLocaleString()} before crew &amp; provisions</span>}
+            </div>
+          )}
+          <div className="form-group" style={{ marginBottom: '1.1rem' }}><label className="form-label">Itinerary Ideas</label><textarea className="form-control" style={{ minHeight: 75 }} value={form.itinerary_description} onChange={e => set('itinerary_description', e.target.value)} placeholder="Route preferences, island stops, diving, water sports…" /></div>
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}><label className="form-label">Special Requests</label><textarea className="form-control" style={{ minHeight: 75 }} value={form.special_requests} onChange={e => set('special_requests', e.target.value)} placeholder="Dietary requirements, celebrations, chef preferences…" /></div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
+            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Charter Request</>}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  )
+}
+
+/* ─── Lease Modal ────────────────────────────────────────────────────────────── */
+function LeaseModal({ open, onClose, asset, assetType }) {
+  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', company: '', lease_duration: 'annual', preferred_start_date: '', budget_range: '', usage_description: '', additional_notes: '' })
+  const [form, setForm]       = useState(blank)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(null)
+  const [error, setError]     = useState(null)
+  const isAc = assetType === 'aircraft'
+
+  const set   = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const reset = ()     => { setForm(blank()); setSuccess(null); setError(null) }
+  const close = ()     => { reset(); onClose() }
+
+  const submit = async (e) => {
+    e.preventDefault(); setLoading(true); setError(null)
+    try { const res = await createLeaseInquiry({ ...form, asset_type: assetType, aircraft: isAc ? asset?.id : undefined, yacht: !isAc ? asset?.id : undefined }); setSuccess(res) }
+    catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={close} icon="bi-file-earmark-text" title={`Lease — ${asset?.name || (isAc ? 'Aircraft' : 'Yacht')}`} subtitle={asset ? (isAc ? `${asset.category_display} · ${asset.passenger_capacity} passengers` : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests`) : ''} maxWidth={660}>
+      {success ? <SuccessState title="Lease Inquiry Submitted" message={success.message || 'Our leasing team will respond within 24 hours with a tailored program proposal.'} reference={success.inquiry?.reference} onNew={reset} onClose={close} /> : (
+        <form onSubmit={submit}>
+          {asset && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--gold-pale)', border: '1px solid #E6CFA0', borderRadius: 'var(--radius)', padding: '0.9rem 1.1rem', marginBottom: '1.6rem' }}>
+              <i className={`bi ${isAc ? 'bi-airplane' : 'bi-water'}`} style={{ fontSize: '1.3rem', color: 'var(--gold)', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 600, color: '#7A5C22', fontSize: '0.92rem' }}>{asset.name}</div>
+                <div style={{ fontSize: '0.75rem', color: '#9A7530', marginTop: 2 }}>
+                  {isAc ? `${asset.category_display} · ${asset.passenger_capacity} pax · ${asset.range_km?.toLocaleString()} km · $${parseInt(asset.hourly_rate_usd || 0).toLocaleString()}/hr`
+                       : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · $${parseInt(asset.daily_rate_usd || 0).toLocaleString()}/day`}
+                </div>
+              </div>
+            </div>
+          )}
+          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+          <FormSection icon="bi-person">Contact Details</FormSection>
+          <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Company <span className="req">*</span></label><input className="form-control" required value={form.company} onChange={e => set('company', e.target.value)} /></div>
+          </div>
+          <FormSection icon="bi-calendar">Lease Program</FormSection>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1.25rem' }}>
+            {LEASE_DURATIONS.map(({ value, label }) => (
+              <button key={value} type="button" onClick={() => set('lease_duration', value)}
+                style={{ padding: '0.65rem 1rem', textAlign: 'left', fontSize: '0.82rem', fontWeight: 500, borderRadius: 'var(--radius)', border: `1.5px solid ${form.lease_duration === value ? 'var(--navy)' : 'var(--gray-200)'}`, background: form.lease_duration === value ? 'var(--blue-soft)' : 'transparent', color: form.lease_duration === value ? 'var(--navy)' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                {label}{form.lease_duration === value && <i className="bi bi-check-circle-fill" style={{ color: 'var(--navy)' }} />}
+              </button>
+            ))}
+          </div>
+          <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group"><label className="form-label">Preferred Start Date <span className="req">*</span></label><input className="form-control" type="date" required value={form.preferred_start_date} min={new Date().toISOString().split('T')[0]} onChange={e => set('preferred_start_date', e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Monthly Budget Range</label><input className="form-control" value={form.budget_range} onChange={e => set('budget_range', e.target.value)} placeholder="e.g. $50K – $150K/month" /></div>
+          </div>
+          <div className="form-group" style={{ marginBottom: '1.1rem' }}>
+            <label className="form-label">Intended Usage <span className="req">*</span></label>
+            <textarea className="form-control" required style={{ minHeight: 80 }} value={form.usage_description} onChange={e => set('usage_description', e.target.value)} placeholder={isAc ? 'Typical routes, estimated hours/month, corporate or personal travel…' : 'Preferred cruising grounds, season length, group size, type of voyages…'} />
+          </div>
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}><label className="form-label">Additional Notes</label><textarea className="form-control" style={{ minHeight: 65 }} value={form.additional_notes} onChange={e => set('additional_notes', e.target.value)} placeholder="Customisation, branding, crew language preferences…" /></div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
+            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Lease Inquiry</>}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════════════════════════════════════════════════ */
+export default function HomePage() {
+  const [aircraft, setAircraft] = useState([])
+  const [yachts, setYachts]     = useState([])
+  const [modal, setModal]       = useState(null)
+
+  useEffect(() => {
+    getAircraft().then(d => setAircraft((d.results || d).slice(0, 3))).catch(() => {})
+    getYachts().then(d => setYachts((d.results || d).slice(0, 3))).catch(() => {})
+  }, [])
+
+  const open  = (type, asset) => setModal({ type, asset })
+  const close = useCallback(() => setModal(null), [])
+
+  return (
+    <div>
+      <PublicNavbar dark />
+
+      {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
+      <section style={{
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <HeroVideoBackground />
+
+        {/* Dark gradient overlay — sits above video, below content */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(11,29,58,0.80) 0%, rgba(11,29,58,0.50) 100%)',
+          zIndex: 3,
+          pointerEvents: 'none',
+        }} />
+
+        {/* Hero content — forced above everything */}
+        <div style={{
+          position: 'relative',
+          zIndex: 4,
+          width: '100%',
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: '0 2rem',
+          paddingTop: '7rem',
+          paddingBottom: '5rem',
+        }}>
+          {/* Eyebrow */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: '#C9A84C',
+            marginBottom: '1.25rem',
+          }}>
+            <i className="bi bi-airplane" style={{ fontSize: '0.9rem' }} />
+            Travel across hidden lands
+          </div>
+
+          {/* H1 */}
+          <h1 style={{
+            fontFamily: 'var(--font-display, Georgia, serif)',
+            fontSize: 'clamp(2.4rem, 5vw, 4rem)',
+            fontWeight: 700,
+            lineHeight: 1.1,
+            color: '#ffffff',
+            marginBottom: '1.5rem',
+            maxWidth: 680,
+          }}>
+            Private Jet Charters &amp;<br />
+            <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
+          </h1>
+
+          {/* Lead paragraph */}
+          <p style={{
+            fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
+            color: 'rgba(255,255,255,0.82)',
+            lineHeight: 1.75,
+            maxWidth: 560,
+            marginBottom: '2.5rem',
+          }}>
+            Instant access to 2,400+ private aircraft and 800+ yachts in 187 countries.
+            No membership. No waiting. Just seamless luxury travel tailored to you.
+          </p>
+
+          {/* CTA Buttons — fully forced inline, no class dependency */}
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Link
+              to="/book-flight"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.875rem 2rem',
+                background: '#C9A84C',
+                color: '#0B1D3A',
+                fontFamily: 'inherit',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                borderRadius: 6,
+                border: '2px solid #C9A84C',
+                letterSpacing: '0.02em',
+                transition: 'opacity 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            >
+              <i className="bi bi-airplane" style={{ fontSize: '1rem' }} />
+              Book a Flight
+            </Link>
+
+            <Link
+              to="/flight-inquiry"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.875rem 2rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#ffffff',
+                fontFamily: 'inherit',
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                borderRadius: 6,
+                border: '2px solid rgba(255,255,255,0.55)',
+                letterSpacing: '0.02em',
+                backdropFilter: 'blur(6px)',
+                transition: 'background 0.2s, border-color 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}
+            >
+              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} />
+              General Inquiry
+            </Link>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 4,
+          opacity: 0.5,
+        }}>
+          <i className="bi bi-chevron-double-down" style={{ color: '#ffffff', fontSize: '1.1rem' }} />
         </div>
       </section>
 
-      {/* ── Stats Bar ─────────────────────────────────────────────────────── */}
-      <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--gray-100)', padding: '2.25rem 0' }}>
+      {/* ══ STATS ══ */}
+      <section className="stats-bar">
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem', textAlign: 'center' }}>
-            {stats.map(s => (
-              <div key={s.label}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem,3vw,2.5rem)', fontWeight: 600, color: 'var(--navy)', lineHeight: 1 }}>
-                  {s.value}
+          <div className="grid-4">
+            {STATS.map(({ value, label, icon }) => (
+              <div className="stat-item" key={label}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
+                  <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
+                  <div className="stat-value">{value}</div>
                 </div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gray-400)', marginTop: '0.3rem' }}>
-                  {s.label}
-                </div>
+                <div className="stat-label">{label}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Services ──────────────────────────────────────────────────────── */}
-      <section className="section">
+      {/* ══ SERVICES ══ */}
+      <section className="section" style={{ background: 'var(--off-white)' }}>
         <div className="container">
           <div className="text-center mb-4">
             <span className="eyebrow">What We Offer</span>
-            <h2>World-Class Aviation Services</h2>
+            <h2>Luxury Travel, <em>Simplified</em></h2>
             <div className="gold-rule gold-rule-center" />
-            <p className="lead" style={{ maxWidth: 560, margin: '0 auto' }}>
-              From private jet charters to superyacht voyages, every service is curated
-              with the precision and discretion you deserve.
+            <p style={{ maxWidth: 540, margin: '0 auto', fontSize: '1rem' }}>
+              From a single flight to a season-long yacht charter or a multi-year aircraft lease, NairobiJetHouse gives you direct access to the world's finest private travel assets — without the complexity.
             </p>
           </div>
-          <div className="grid-3" style={{ marginTop: '2.5rem' }}>
-            {services.map(s => (
-              <Link key={s.title} to={s.link} className="card" style={{ textDecoration: 'none' }}>
-                <div className="card-body" style={{ padding: '2rem' }}>
-                  <div style={{
-                    width: 56, height: 56,
-                    background: 'var(--gold-pale)',
-                    borderRadius: 'var(--radius-lg)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '1.4rem', color: 'var(--gold-dark)',
-                    marginBottom: '1.25rem',
-                  }}>
-                    <i className={`bi ${s.icon}`} />
-                  </div>
-                  <h4 style={{ marginBottom: '0.6rem' }}>{s.title}</h4>
-                  <p style={{ fontSize: '0.875rem', marginBottom: '1.25rem' }}>{s.desc}</p>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--gold)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    Learn More <i className="bi bi-arrow-right" />
-                  </span>
+          <div className="grid-4" style={{ marginTop: '3rem' }}>
+            {SERVICES.map(({ icon, title, tagline, description, link, cta }) => (
+              <div className="card" key={title} style={{ padding: '2rem' }}>
+                <div style={{ width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                  <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
                 </div>
-              </Link>
+                <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Fleet Preview ──────────────────────────────────────────────────── */}
+      {/* ══ FEATURED AIRCRAFT ══ */}
       {aircraft.length > 0 && (
-        <section className="section section-surface">
+        <section className="section">
           <div className="container">
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
               <div>
-                <span className="eyebrow">Our Fleet</span>
-                <h2>Featured Aircraft</h2>
+                <span className="eyebrow">Private Jet Fleet</span>
+                <h2>Aircraft for Every <em>Mission</em></h2>
                 <div className="gold-rule" />
+                <p style={{ maxWidth: 500 }}>From nimble light jets perfect for European city hops to ultra-long-range flagships that connect New York to Singapore nonstop — our fleet covers every range, cabin size, and budget.</p>
               </div>
-              <Link to="/fleet" className="btn btn-outline-navy">
-                View Full Fleet <i className="bi bi-arrow-right" />
-              </Link>
+              <Link to="/fleet" className="btn btn-outline-navy">View Full Fleet <i className="bi bi-arrow-right" /></Link>
             </div>
-            <div className="fleet-grid">
+            <div className="grid-3">
               {aircraft.map(ac => (
-                <div key={ac.id} className="aircraft-card">
-                  <div className="aircraft-img">
-                    {ac.image_url
-                      ? <img src={ac.image_url} alt={ac.name} />
-                      : <i className="bi bi-airplane" />}
-                    <span className="aircraft-category-pill">{ac.category_display || ac.category}</span>
-                  </div>
-                  <div className="aircraft-body">
-                    <div className="aircraft-name">{ac.name}</div>
-                    <div className="aircraft-model">{ac.model}</div>
-                    <div className="aircraft-specs">
-                      <div className="aircraft-spec"><i className="bi bi-people" />{ac.passenger_capacity} pax</div>
-                      <div className="aircraft-spec"><i className="bi bi-broadcast" />{ac.range_km?.toLocaleString()} km</div>
-                      <div className="aircraft-spec"><i className="bi bi-speedometer" />{ac.cruise_speed_kmh} km/h</div>
+                <div className="card" key={ac.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                  {ac.image_url ? <img src={ac.image_url} alt={ac.name} className="card-img" /> : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
+                  <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <span className="card-tag">{ac.category_display}</span>
+                    <div className="card-title">{ac.name}</div>
+                    <div className="card-meta" style={{ marginBottom: '1rem' }}>
+                      <i className="bi bi-people" style={{ marginRight: 5 }} />{ac.passenger_capacity} passengers
+                      <span style={{ margin: '0 8px', color: 'var(--gray-200)' }}>·</span>
+                      <i className="bi bi-arrow-left-right" style={{ marginRight: 5 }} />{ac.range_km?.toLocaleString()} km range
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
-                      <div className="aircraft-price">
-                        ${Number(ac.hourly_rate_usd).toLocaleString()}
-                        <small>/hr</small>
-                      </div>
-                      <Link to="/book-flight" className="btn btn-navy btn-sm">
-                        <i className="bi bi-calendar-plus" /> Charter
-                      </Link>
+                    <div className="card-actions" style={{ marginTop: 'auto' }}>
+                      <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}><i className="bi bi-airplane" /> Book</button>
+                      <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}><i className="bi bi-file-earmark-text" /> Lease</button>
                     </div>
                   </div>
                 </div>
@@ -210,161 +719,130 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Destinations ──────────────────────────────────────────────────── */}
-      <section className="section">
+      {/* ══ WHY US ══ */}
+      <section className="section" style={{ background: 'var(--gray-50)' }}>
         <div className="container">
           <div className="text-center mb-4">
-            <span className="eyebrow">Global Routes</span>
-            <h2>Fly Anywhere, Anytime</h2>
+            <span className="eyebrow">Why NairobiJetHouse</span>
+            <h2>The Standard Others <em>Aspire To</em></h2>
             <div className="gold-rule gold-rule-center" />
-            <p className="lead" style={{ maxWidth: 520, margin: '0 auto' }}>
-              From Nairobi to every corner of the world — intercontinental routes
-              planned and operated to perfection.
-            </p>
+            <p style={{ maxWidth: 520, margin: '0 auto' }}>With over 20 years serving heads of state, Fortune 500 executives, and discerning private travellers, NairobiJetHouse has perfected what private travel should feel like.</p>
           </div>
-          <div className="grid-3" style={{ marginTop: '2.5rem' }}>
-            {destinations.map(d => (
-              <Link key={d.code} to="/book-flight" style={{
-                display: 'block',
-                background: d.bg,
-                borderRadius: 'var(--radius-lg)',
-                padding: '2rem',
-                textDecoration: 'none',
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'var(--transition-slow)',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{ position: 'absolute', right: '-10px', bottom: '-10px', fontSize: '5rem', color: 'rgba(255,255,255,0.05)', fontFamily: 'var(--font-display)', fontWeight: 700, lineHeight: 1 }}>
-                  {d.code}
+          <div className="grid-3" style={{ marginTop: '3rem' }}>
+            {WHY_US.map(({ icon, title, desc }) => (
+              <div key={title} style={{ display: 'flex', gap: '1.25rem', padding: '1.5rem', background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-100)' }}>
+                <div style={{ flexShrink: 0, width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.2rem' }} />
                 </div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: '0.5rem' }}>
-                  {d.country}
+                <div>
+                  <h4 style={{ fontSize: '0.95rem', marginBottom: '0.4rem' }}>{title}</h4>
+                  <p style={{ fontSize: '0.84rem', lineHeight: 1.65 }}>{desc}</p>
                 </div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 600, color: 'var(--white)', marginBottom: '0.85rem' }}>
-                  {d.city}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem' }}>
-                  <i className="bi bi-airplane" style={{ color: 'var(--gold)' }} />
-                  From Nairobi · Charter Now
-                </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Membership CTA ────────────────────────────────────────────────── */}
-      <section style={{
-        background: 'linear-gradient(135deg, var(--navy-deep) 0%, var(--navy-mid) 100%)',
-        padding: 'var(--section-py) 0', position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', left: '-5%', top: '-40%',
-          width: '50vw', height: '50vw', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-            <div>
-              <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Membership</span>
-              <h2 style={{ color: 'var(--white)', marginBottom: '1rem' }}>
-                Unlock Priority Access & Exclusive Rates
-              </h2>
-              <div className="gold-rule" />
-              <p style={{ color: 'rgba(255,255,255,0.62)', marginBottom: '2rem', lineHeight: 1.85 }}>
-                Join NairobiJetHouse membership to access our entire marketplace fleet,
-                receive priority booking, dedicated concierge, and member-only discounts
-                across all our intercontinental routes.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '2.25rem' }}>
-                {['Priority fleet access with instant booking', 'Up to 20% off standard charter rates', 'Dedicated 24/7 concierge line', 'Exclusive routes and VIP lounges'].map(f => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.72)' }}>
-                    <i className="bi bi-check-circle-fill" style={{ color: 'var(--gold)', flexShrink: 0 }} />
-                    {f}
+      {/* ══ YACHT CTA ══ */}
+      <section style={{ position: 'relative', padding: '7rem 0', overflow: 'hidden', backgroundImage: `url(https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&q=80)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(11,29,58,0.88) 0%, rgba(11,29,58,0.55) 100%)' }} />
+        <div className="container" style={{ position: 'relative', textAlign: 'center' }}>
+          <span className="eyebrow" style={{ color: 'var(--gold-light)' }}><i className="bi bi-water" /> Superyacht Charter</span>
+          <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts</h2>
+          <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 560, margin: '0 auto 2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>From the turquoise waters of the Maldives to the dramatic fjords of Norway, our superyacht fleet takes you to places only accessible by sea. Fully crewed, provisioned, and ready to sail on your schedule.</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/yacht-charter" className="btn btn-gold btn-lg"><i className="bi bi-water" /> Charter a Yacht</Link>
+            <Link to="/fleet" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>Browse Yachts</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ HOW IT WORKS ══ */}
+      <section className="section">
+        <div className="container">
+          <div className="text-center mb-4">
+            <span className="eyebrow">The NairobiJetHouse Process</span>
+            <h2>From Request to <em>Takeoff</em> in Three Steps</h2>
+            <div className="gold-rule gold-rule-center" />
+            <p style={{ maxWidth: 500, margin: '0 auto' }}>We've eliminated every unnecessary step. Our booking process is designed for busy people who value their time as much as their comfort.</p>
+          </div>
+          <div className="grid-3" style={{ marginTop: '3.5rem' }}>
+            {PROCESS.map(({ step, icon, title, desc }) => (
+              <div key={step} style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
+                  <div style={{ width: 72, height: 72, background: 'var(--navy)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
                   </div>
-                ))}
+                  <span style={{ position: 'absolute', top: -6, right: -10, fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 4 }}>{step}</span>
+                </div>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>{title}</h3>
+                <p style={{ fontSize: '0.875rem', lineHeight: 1.75 }}>{desc}</p>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <Link to="/membership" className="btn btn-gold btn-lg">
-                  <i className="bi bi-star" /> View Membership Plans
-                </Link>
-                <Link to="/register" className="btn btn-outline-gold">
-                  Create Account
-                </Link>
+            ))}
+          </div>
+          <div className="text-center" style={{ marginTop: '3rem' }}>
+            <Link to="/book-flight" className="btn btn-navy btn-lg"><i className="bi bi-airplane" /> Begin Your Journey</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FEATURED YACHTS ══ */}
+      {yachts.length > 0 && (
+        <section className="section" style={{ background: 'var(--off-white)' }}>
+          <div className="container">
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
+              <div>
+                <span className="eyebrow">Superyacht Fleet</span>
+                <h2>Vessels Built for <em>Extraordinary</em> Voyages</h2>
+                <div className="gold-rule" />
               </div>
+              <Link to="/fleet" className="btn btn-outline-navy">View All Yachts <i className="bi bi-arrow-right" /></Link>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {[
-                { tier: 'Basic', price: '$499', period: '/mo', features: ['10 bookings/mo', '5% discount', 'Standard support'] },
-                { tier: 'Premium', price: '$1,299', period: '/mo', features: ['Unlimited bookings', '12% discount', 'Priority support', 'Lounge access'], gold: true },
-                { tier: 'Corporate', price: '$3,499', period: '/mo', features: ['Unlimited + multi-user', '20% discount', 'Dedicated manager', 'Global routes'] },
-              ].map((t, i) => (
-                <div key={t.tier} style={{
-                  background: t.gold ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${t.gold ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1.5rem',
-                  gridColumn: i === 2 ? '1 / -1' : 'auto',
-                }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: t.gold ? 'var(--gold)' : 'rgba(255,255,255,0.45)', marginBottom: '0.6rem' }}>
-                    {t.tier}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--white)', fontWeight: 600, lineHeight: 1, marginBottom: '0.3rem' }}>
-                    {t.price}<span style={{ fontSize: '0.85rem', fontWeight: 300, color: 'rgba(255,255,255,0.45)' }}>{t.period}</span>
-                  </div>
-                  {t.features.map(f => (
-                    <div key={f} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', marginTop: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <i className="bi bi-check2" style={{ color: 'var(--gold)', fontSize: '0.7rem' }} />{f}
+            <div className="grid-3">
+              {yachts.map(y => (
+                <div className="card" key={y.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                  {y.image_url ? <img src={y.image_url} alt={y.name} className="card-img" /> : <div className="card-img-placeholder"><i className="bi bi-water" /></div>}
+                  <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <span className="card-tag">{y.size_display}</span>
+                    <div className="card-title">{y.name}</div>
+                    <div className="card-meta" style={{ marginBottom: '0.5rem' }}>{y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '1rem' }}>
+                      From ${parseInt(y.daily_rate_usd).toLocaleString()}
+                      <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.78rem' }}>/day</span>
                     </div>
-                  ))}
+                    <div className="card-actions" style={{ marginTop: 'auto' }}>
+                      <button className="btn btn-navy btn-sm" onClick={() => open('charter-yacht', y)}><i className="bi bi-water" /> Charter</button>
+                      <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-yacht', y)}><i className="bi bi-file-earmark-text" /> Lease</button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ── Why Us ────────────────────────────────────────────────────────── */}
-      <section className="section section-surface">
-        <div className="container">
-          <div className="text-center mb-5">
-            <span className="eyebrow">Why NairobiJetHouse</span>
-            <h2>The Gold Standard in African Aviation</h2>
-            <div className="gold-rule gold-rule-center" />
-          </div>
-          <div className="grid-4">
-            {[
-              { icon: 'bi-globe', title: 'Global Reach', desc: 'Access to 140+ countries with established operators on every continent.' },
-              { icon: 'bi-shield-check', title: 'Fully Vetted', desc: 'All aircraft and operators undergo stringent safety and compliance checks.' },
-              { icon: 'bi-lightning-charge', title: 'Instant Quotes', desc: 'Real-time pricing with transparent breakdowns — no hidden fees.' },
-              { icon: 'bi-headset', title: '24 / 7 Support', desc: 'Dedicated concierge available around the clock, wherever you are.' },
-            ].map(w => (
-              <div key={w.title} style={{ textAlign: 'center', padding: '0.5rem' }}>
-                <div style={{
-                  width: 64, height: 64,
-                  background: 'var(--white)',
-                  borderRadius: '50%',
-                  border: '1px solid var(--gray-100)',
-                  boxShadow: 'var(--shadow-sm)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.5rem', color: 'var(--gold)',
-                  margin: '0 auto 1.25rem',
-                }}>
-                  <i className={`bi ${w.icon}`} />
-                </div>
-                <h4 style={{ marginBottom: '0.5rem' }}>{w.title}</h4>
-                <p style={{ fontSize: '0.875rem' }}>{w.desc}</p>
-              </div>
-            ))}
+      {/* ══ FINAL CTA ══ */}
+      <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
+        <div className="container" style={{ maxWidth: 680 }}>
+          <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</span>
+          <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em></h2>
+          <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>Whether you're flying solo or bringing an entire team, NairobiJetHouse has the right aircraft at the right price. Our concierge team is standing by 24 hours a day, seven days a week.</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/book-flight" className="btn btn-gold btn-lg"><i className="bi bi-airplane" /> Book a Flight</Link>
+            <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}><i className="bi bi-send" /> Send an Inquiry</Link>
           </div>
         </div>
       </section>
 
       <PublicFooter />
-    </>
-  );
+
+      {/* ══ MODALS ══ */}
+      <BookFlightModal    open={modal?.type === 'book-flight'}    onClose={close} aircraft={modal?.asset} />
+      <CharterYachtModal  open={modal?.type === 'charter-yacht'}  onClose={close} yacht={modal?.asset} />
+      <LeaseModal         open={modal?.type === 'lease-aircraft'} onClose={close} asset={modal?.asset} assetType="aircraft" />
+      <LeaseModal         open={modal?.type === 'lease-yacht'}    onClose={close} asset={modal?.asset} assetType="yacht" />
+    </div>
+  )
 }
