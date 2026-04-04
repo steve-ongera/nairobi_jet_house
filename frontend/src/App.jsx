@@ -20,6 +20,10 @@ import RegisterPage         from './pages/normal/RegisterPage';
 import NotFoundPage         from './pages/normal/NotFoundPage';
 import FlightInquiryPage    from './pages/normal/FlightInquiryPage';
 import YachtCharterPage     from './pages/normal/YachtCharterPage';
+import AirCargo             from './pages/normal/AirCargo';
+import GroupCharter         from './pages/normal/GroupCharter';
+import AircraftSales        from './pages/normal/AircraftSales';
+import Leasing              from './pages/normal/Leasing';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import AdminDashboardPage      from './pages/admin/AdminDashboardPage';
@@ -137,6 +141,12 @@ export default function App() {
         <Route path="/membership"     element={<MembershipPublicPage />} />
         <Route path="/login"          element={<LoginPage />} />
         <Route path="/register"       element={<RegisterPage />} />
+
+        {/* ── New Service Pages ────────────────────────────────────────────── */}
+        <Route path="/air-cargo"      element={<AirCargo />} />
+        <Route path="/group-charter"  element={<GroupCharter />} />
+        <Route path="/aircraft-sales" element={<AircraftSales />} />
+        <Route path="/leasing"        element={<Leasing />} />
 
         {/* ── Admin ───────────────────────────────────────────────────────── */}
         <Route path="/admin"
