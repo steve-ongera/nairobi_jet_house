@@ -89,7 +89,7 @@ const styles = {
   },
   statCard: {
     background: '#fff',
-    borderRadius: '12px',
+    borderRadius: '8px',
     border: '1px solid #f1f5f9',
     padding: '1.1rem 1.2rem',
     boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -179,8 +179,9 @@ const styles = {
   },
   barChartCard: {
     background: '#fff',
-    borderRadius: '12px',
+    borderRadius: '10px', 
     border: '1px solid #f1f5f9',
+    borderTop: '12px',
     padding: '1.25rem',
     boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
   },
@@ -666,7 +667,7 @@ export default function AdminDashboardPage() {
         <div style={styles.barChartCard}>
           <div style={styles.chartTitle}>Inquiry volume by type</div>
           <div style={styles.chartSubtitle}>Total inquiries per category</div>
-          <div style={{ position: 'relative', height: 210, marginTop: 8 }}>
+          <div style={{ position: 'relative', height: 210, marginTop: 20 }}>
             <Bar data={barData} options={barOptions} />
           </div>
         </div>

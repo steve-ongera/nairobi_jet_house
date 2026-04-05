@@ -1773,6 +1773,3 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Application not found.'}, status=404)
  
  
-# ── ADD to router in urls.py ──────────────────────────────────────────────────
-# router.register(r'jobs',             JobPostingViewSet,     basename='job')
-# router.register(r'job-applications', JobApplicationViewSet, basename='job-application')

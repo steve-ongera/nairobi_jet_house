@@ -494,34 +494,44 @@ from .models import CommissionSetting
 
 class FlightBookingAdminSerializer(serializers.ModelSerializer):
     """Full admin view — includes commission breakdown."""
-    legs              = serializers.SerializerMethodField()
-    origin_detail     = serializers.SerializerMethodField()
-    dest_detail       = serializers.SerializerMethodField()
-    status_display    = serializers.CharField(source='get_status_display',    read_only=True)
-    trip_type_display = serializers.CharField(source='get_trip_type_display', read_only=True)
-
-    # Computed helpers for the frontend
+    legs               = serializers.SerializerMethodField()
+    origin_detail      = serializers.SerializerMethodField()
+    destination_detail = serializers.SerializerMethodField()   # ← was "dest_detail"
+    status_display     = serializers.CharField(source='get_status_display',    read_only=True)
+    trip_type_display  = serializers.CharField(source='get_trip_type_display', read_only=True)
     commission_pct_display = serializers.SerializerMethodField()
-
+ 
     class Meta:
         model  = FlightBooking
         fields = '__all__'
         read_only_fields = ['reference', 'commission_usd', 'net_revenue_usd', 'created_at', 'updated_at']
-
+ 
     def get_legs(self, obj):
         from .serializers import FlightLegSerializer
         return FlightLegSerializer(obj.legs.all(), many=True).data
-
+ 
     def get_origin_detail(self, obj):
         if obj.origin:
-            return {'id': obj.origin.id, 'code': obj.origin.code, 'city': obj.origin.city}
+            return {
+                'id':      obj.origin.id,
+                'code':    obj.origin.code,
+                'name':    obj.origin.name,       # ← full airport name
+                'city':    obj.origin.city,
+                'country': obj.origin.country,    # ← country
+            }
         return None
-
-    def get_dest_detail(self, obj):
+ 
+    def get_destination_detail(self, obj):         # ← renamed from get_dest_detail
         if obj.destination:
-            return {'id': obj.destination.id, 'code': obj.destination.code, 'city': obj.destination.city}
+            return {
+                'id':      obj.destination.id,
+                'code':    obj.destination.code,
+                'name':    obj.destination.name,   # ← full airport name
+                'city':    obj.destination.city,
+                'country': obj.destination.country,# ← country
+            }
         return None
-
+ 
     def get_commission_pct_display(self, obj):
         return f"{obj.commission_pct}%"
 
