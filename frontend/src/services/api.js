@@ -206,13 +206,16 @@ export const adminInquiryApi = {
 export const adminUserApi = {
   list:          params     => get('/admin/users/', params),
   detail:        id         => get(`/admin/users/${id}/`),
+  create:        data       => post('/auth/register/', data),   // POST to register — adjust if you add a dedicated admin create endpoint
   update:        (id, data) => patch(`/admin/users/${id}/`, data),
+  delete:        id         => del(`/admin/users/${id}/`),
   toggle:        id         => post(`/admin/users/${id}/toggle_active/`),
   sendEmail:     (id, data) => post(`/admin/users/${id}/send_email/`, data),
   memberships:   ()         => get('/memberships/'),
   commissions:   ()         => get('/commissions/'),
   setCommission: data       => post('/commissions/', data),
 };
+ 
 
 // ── Admin: Marketplace ────────────────────────────────────────────────────────
 export const adminMarketApi = {

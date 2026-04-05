@@ -35,6 +35,7 @@ import AdminMarketplacePage    from './pages/admin/AdminMarketplacePage';
 import AdminEmailLogsPage      from './pages/admin/AdminEmailLogsPage';
 import AdminCareersPage        from './pages/admin/AdminCareersPage';
 import AdminSettingsPage       from './pages/admin/AdminSettingsPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage'
 
 // ── Staff Pages ───────────────────────────────────────────────────────────────
 import StaffDashboardPage  from './pages/staff/StaffDashboardPage';
@@ -142,7 +143,7 @@ export default function App() {
         <Route path="/login"          element={<LoginPage />} />
         <Route path="/register"       element={<RegisterPage />} />
 
-        {/* ── New Service Pages ────────────────────────────────────────────── */}
+        {/* ── Service Pages ────────────────────────────────────────────────── */}
         <Route path="/air-cargo"      element={<AirCargo />} />
         <Route path="/group-charter"  element={<GroupCharter />} />
         <Route path="/aircraft-sales" element={<AircraftSales />} />
@@ -151,6 +152,9 @@ export default function App() {
         {/* ── Admin ───────────────────────────────────────────────────────── */}
         <Route path="/admin"
           element={<RequireAuth roles={['admin']}><AdminDashboardPage /></RequireAuth>} />
+        <Route path="/admin/reports"
+           element={<RequireAuth roles={['admin']}><AdminReportsPage /></RequireAuth>} />
+
         <Route path="/admin/flights"
           element={<RequireAuth roles={['admin']}><AdminFlightBookingsPage /></RequireAuth>} />
         <Route path="/admin/yachts"
