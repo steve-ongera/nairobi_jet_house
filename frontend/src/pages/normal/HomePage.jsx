@@ -17,10 +17,71 @@ const STATS = [
 ]
 
 const SERVICES = [
-  { icon: 'bi-airplane',          title: 'Private Jet Charter', tagline: 'Airport to airport, worldwide',       description: 'Book a private jet from any airport to any destination worldwide. Whether you need a light jet for a regional hop or an ultra-long-range aircraft for intercontinental travel, our team finds the right aircraft at the right price — instantly.',                                                                                                link: '/book-flight',    cta: 'Book a Flight' },
-  { icon: 'bi-water',             title: 'Superyacht Charter',  tagline: 'Mediterranean, Caribbean & beyond',  description: 'Charter a superyacht for a weekend, a week, or the entire season. From intimate sailing yachts to 130-metre flagship vessels, our fleet covers every ocean. Full crew, bespoke itineraries, and world-class provisioning included.',                                                                                                 link: '/yacht-charter',  cta: 'Charter a Yacht' },
-  { icon: 'bi-file-earmark-text', title: 'Long-Term Leasing',  tagline: 'Dedicated aircraft & yacht programs', description: 'For frequent travellers and corporations, a dedicated lease offers unmatched availability and significant cost savings over ad-hoc charter. Monthly, quarterly, and multi-year programs available for aircraft and yachts.',                                                                                                           link: '/leasing',        cta: 'Explore Leasing' },
-  { icon: 'bi-send',              title: 'Flight Inquiry',      tagline: 'Explore options, no commitment',      description: "Not sure of your dates or route? Send a general inquiry and one of our aviation specialists will design the perfect itinerary for you. We'll present aircraft options, pricing estimates, and routing alternatives within hours.",                                                                                                link: '/flight-inquiry', cta: 'Send Inquiry' },
+  {
+    icon: 'bi-airplane',
+    title: 'Private Jet Charter',
+    tagline: 'Airport to airport, worldwide',
+    description: 'Book a private jet from any airport to any destination worldwide. Whether you need a light jet for a regional hop or an ultra-long-range aircraft for intercontinental travel, our team finds the right aircraft at the right price — instantly.',
+    link: '/book-flight',
+    cta: 'Book a Flight',
+  },
+  {
+    icon: 'bi-water',
+    title: 'Superyacht Charter',
+    tagline: 'Mediterranean, Caribbean & beyond',
+    description: 'Charter a superyacht for a weekend, a week, or the entire season. From intimate sailing yachts to 130-metre flagship vessels, our fleet covers every ocean. Full crew, bespoke itineraries, and world-class provisioning included.',
+    link: '/yacht-charter',
+    cta: 'Charter a Yacht',
+  },
+  {
+    icon: 'bi-file-earmark-text',
+    title: 'Long-Term Leasing',
+    tagline: 'Dedicated aircraft & yacht programs',
+    description: 'For frequent travellers and corporations, a dedicated lease offers unmatched availability and significant cost savings over ad-hoc charter. Monthly, quarterly, and multi-year programs available for aircraft and yachts.',
+    link: '/leasing',
+    cta: 'Explore Leasing',
+  },
+  {
+    icon: 'bi-send',
+    title: 'Flight Inquiry',
+    tagline: 'Explore options, no commitment',
+    description: "Not sure of your dates or route? Send a general inquiry and one of our aviation specialists will design the perfect itinerary for you. We'll present aircraft options, pricing estimates, and routing alternatives within hours.",
+    link: '/flight-inquiry',
+    cta: 'Send Inquiry',
+  },
+  {
+    icon: 'bi-boxes',
+    title: 'Air Cargo & Valuables',
+    tagline: 'Gold, minerals, pharma & critical freight',
+    description: 'Dedicated air cargo charters for general freight, perishables, pharmaceuticals, and oversized shipments — plus specialist logistics for high-value cargo including gold bullion, diamonds, jewellery, and precious minerals. Full chain-of-custody, armed escort options, and comprehensive insurance worldwide.',
+    link: '/air-cargo',
+    cta: 'Get a Cargo Quote',
+    highlight: true,
+  },
+  {
+    icon: 'bi-people',
+    title: 'Group Charter',
+    tagline: 'Corporate, sports, events & incentives',
+    description: 'Custom group charter flights for corporate teams, sports clubs, government delegations, entertainment productions, and incentive groups. We handle all logistics from ground transport coordination to in-flight catering for groups of any size.',
+    link: '/group-charter',
+    cta: 'Request Group Charter',
+  },
+  {
+    icon: 'bi-shop',
+    title: 'Aircraft Sales',
+    tagline: 'Buy, sell, trade or get a valuation',
+    description: 'Looking to acquire your own aircraft or sell an existing one? Our aircraft sales team specialises in private jet acquisitions, trade-ins, pre-owned valuations, and facilitating transactions between buyers and sellers worldwide.',
+    link: '/aircraft-sales',
+    cta: 'Explore Aircraft Sales',
+  },
+  {
+    icon: 'bi-search',
+    title: 'Track Your Booking',
+    tagline: 'Live status on any inquiry or flight',
+    description: 'Already submitted a booking, charter, or inquiry? Track your request in real time using your unique reference number. Get live status updates, quotes, and confirmations — no account needed.',
+    link: '/track',
+    cta: 'Track a Booking',
+  },
 ]
 
 const WHY_US = [
@@ -505,8 +566,6 @@ export default function HomePage() {
         justifyContent: 'center',
       }}>
         <HeroVideoBackground />
-
-        {/* Dark gradient overlay — sits above video, below content */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -514,8 +573,6 @@ export default function HomePage() {
           zIndex: 3,
           pointerEvents: 'none',
         }} />
-
-        {/* Hero content — forced above everything */}
         <div style={{
           position: 'relative',
           zIndex: 4,
@@ -526,7 +583,6 @@ export default function HomePage() {
           paddingTop: '7rem',
           paddingBottom: '5rem',
         }}>
-          {/* Eyebrow */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -541,8 +597,6 @@ export default function HomePage() {
             <i className="bi bi-airplane" style={{ fontSize: '0.9rem' }} />
             Travel across hidden lands
           </div>
-
-          {/* H1 */}
           <h1 style={{
             fontFamily: 'var(--font-display, Georgia, serif)',
             fontSize: 'clamp(2.4rem, 5vw, 4rem)',
@@ -555,8 +609,6 @@ export default function HomePage() {
             Private Jet Charters &amp;<br />
             <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
           </h1>
-
-          {/* Lead paragraph */}
           <p style={{
             fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
             color: 'rgba(255,255,255,0.82)',
@@ -567,73 +619,16 @@ export default function HomePage() {
             Instant access to 2,400+ private aircraft and 800+ yachts in 187 countries.
             No membership. No waiting. Just seamless luxury travel tailored to you.
           </p>
-
-          {/* CTA Buttons — fully forced inline, no class dependency */}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link
-              to="/book-flight"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.875rem 2rem',
-                background: '#C9A84C',
-                color: '#0B1D3A',
-                fontFamily: 'inherit',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                borderRadius: 6,
-                border: '2px solid #C9A84C',
-                letterSpacing: '0.02em',
-                transition: 'opacity 0.2s',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >
-              <i className="bi bi-airplane" style={{ fontSize: '1rem' }} />
-              Book a Flight
+            <Link to="/book-flight" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C', letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.88'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              <i className="bi bi-airplane" style={{ fontSize: '1rem' }} /> Book a Flight
             </Link>
-
-            <Link
-              to="/flight-inquiry"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.875rem 2rem',
-                background: 'rgba(255,255,255,0.08)',
-                color: '#ffffff',
-                fontFamily: 'inherit',
-                fontSize: '0.92rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                borderRadius: 6,
-                border: '2px solid rgba(255,255,255,0.55)',
-                letterSpacing: '0.02em',
-                backdropFilter: 'blur(6px)',
-                transition: 'background 0.2s, border-color 0.2s',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}
-            >
-              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} />
-              General Inquiry
+            <Link to="/flight-inquiry" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
+              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> General Inquiry
             </Link>
           </div>
         </div>
-
-        {/* Scroll indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 4,
-          opacity: 0.5,
-        }}>
+        <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4, opacity: 0.5 }}>
           <i className="bi bi-chevron-double-down" style={{ color: '#ffffff', fontSize: '1.1rem' }} />
         </div>
       </section>
@@ -655,7 +650,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══ SERVICES ══ */}
+      {/* ══ SERVICES ══════════════════════════════════════════════════════════ */}
       <section className="section" style={{ background: 'var(--off-white)' }}>
         <div className="container">
           <div className="text-center mb-4">
@@ -666,8 +661,10 @@ export default function HomePage() {
               From a single flight to a season-long yacht charter or a multi-year aircraft lease, NairobiJetHouse gives you direct access to the world's finest private travel assets — without the complexity.
             </p>
           </div>
+
+          {/* ── Primary services (4-col) ── */}
           <div className="grid-4" style={{ marginTop: '3rem' }}>
-            {SERVICES.map(({ icon, title, tagline, description, link, cta }) => (
+            {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta }) => (
               <div className="card" key={title} style={{ padding: '2rem' }}>
                 <div style={{ width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
                   <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
@@ -676,6 +673,36 @@ export default function HomePage() {
                 <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
                 <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
                 <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Additional services (4-col, subtle separator) ── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            margin: '2.5rem 0 2rem',
+          }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>More Services</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
+          </div>
+
+          <div className="grid-4">
+            {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight }) => (
+              <div className="card" key={title} style={{
+                padding: '2rem',
+                ...(highlight ? { borderColor: 'var(--gold)', borderWidth: 2 } : {}),
+              }}>
+               
+                <div style={{ width: 52, height: 52, background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)' }}>
+                  <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: highlight ? 'var(--gold)' : 'var(--navy)' }} />
+                </div>
+                <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>{cta} <i className="bi bi-arrow-right" /></Link>
               </div>
             ))}
           </div>
