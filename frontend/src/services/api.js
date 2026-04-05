@@ -107,7 +107,7 @@ export const inquiryApi = {
   lease:           data => post('/leases/', data),
   flightInquiry:   data => post('/flight-inquiries/', data),
   groupCharter:    data => post('/group-charters/', data),
-  cargo:           data => post('/cargo/', data),
+  airCargo:        data => post('/cargo/', data),        // ← fixed: was "cargo", now "airCargo"
   aircraftSales:   data => post('/aircraft-sales/', data),
 };
 
@@ -144,16 +144,16 @@ export const memberApi = {
 
 // ── Owner ─────────────────────────────────────────────────────────────────────
 export const ownerApi = {
-  dashboard:        ()     => get('/dashboard/owner/summary/'),
-  aircraft:         ()     => get('/marketplace/'),
-  addAircraft:      data   => post('/marketplace/', data),
-  updateAircraft:   (id,d) => patch(`/marketplace/${id}/`, d),
-  logHours:         (id,h) => post(`/marketplace/${id}/log_flight_hours/`, { hours: h }),
-  updateStatus:     (id,s) => post(`/marketplace/${id}/update_status/`, { status: s }),
-  maintenance:      ()     => get('/maintenance/'),
-  addMaintenance:   data   => post('/maintenance/', data),
-  maintenanceAlerts: ()    => get('/maintenance/alerts/'),
-  bookings:         ()     => get('/my-bookings/'),
+  dashboard:         ()     => get('/dashboard/owner/summary/'),
+  aircraft:          ()     => get('/marketplace/'),
+  addAircraft:       data   => post('/marketplace/', data),
+  updateAircraft:    (id,d) => patch(`/marketplace/${id}/`, d),
+  logHours:          (id,h) => post(`/marketplace/${id}/log_flight_hours/`, { hours: h }),
+  updateStatus:      (id,s) => post(`/marketplace/${id}/update_status/`, { status: s }),
+  maintenance:       ()     => get('/maintenance/'),
+  addMaintenance:    data   => post('/maintenance/', data),
+  maintenanceAlerts: ()     => get('/maintenance/alerts/'),
+  bookings:          ()     => get('/my-bookings/'),
 };
 
 // ── Admin: Overview ───────────────────────────────────────────────────────────
@@ -204,14 +204,14 @@ export const adminInquiryApi = {
 
 // ── Admin: Users ──────────────────────────────────────────────────────────────
 export const adminUserApi = {
-  list:         params     => get('/admin/users/', params),
-  detail:       id         => get(`/admin/users/${id}/`),
-  update:       (id, data) => patch(`/admin/users/${id}/`, data),
-  toggle:       id         => post(`/admin/users/${id}/toggle_active/`),
-  sendEmail:    (id, data) => post(`/admin/users/${id}/send_email/`, data),
-  memberships:  ()         => get('/memberships/'),
-  commissions:  ()         => get('/commissions/'),
-  setCommission: data      => post('/commissions/', data),
+  list:          params     => get('/admin/users/', params),
+  detail:        id         => get(`/admin/users/${id}/`),
+  update:        (id, data) => patch(`/admin/users/${id}/`, data),
+  toggle:        id         => post(`/admin/users/${id}/toggle_active/`),
+  sendEmail:     (id, data) => post(`/admin/users/${id}/send_email/`, data),
+  memberships:   ()         => get('/memberships/'),
+  commissions:   ()         => get('/commissions/'),
+  setCommission: data       => post('/commissions/', data),
 };
 
 // ── Admin: Marketplace ────────────────────────────────────────────────────────

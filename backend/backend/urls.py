@@ -15,7 +15,7 @@ from core.views import (
     FlightBookingViewSet, YachtCharterViewSet,
     LeaseInquiryViewSet, FlightInquiryViewSet, QuickQuoteView,
     ContactInquiryViewSet, GroupCharterInquiryViewSet,
-    AirCargoInquiryViewSet, AircraftSalesInquiryViewSet,
+    AirCargoInquiryViewSet, AircraftSalesInquiryViewSet,JobPostingViewSet , JobApplicationViewSet, 
     # Auth / Membership
     AuthViewSet, MembershipTierViewSet, MembershipViewSet,
     MarketplaceAircraftViewSet, MaintenanceLogViewSet,
@@ -46,6 +46,8 @@ router.register(r'contacts',          ContactInquiryViewSet,       basename='con
 router.register(r'group-charters',    GroupCharterInquiryViewSet,  basename='group-charter')
 router.register(r'cargo',             AirCargoInquiryViewSet,      basename='cargo')
 router.register(r'aircraft-sales',    AircraftSalesInquiryViewSet, basename='aircraft-sales')
+router.register(r'jobs',             JobPostingViewSet,     basename='job')
+router.register(r'job-applications', JobApplicationViewSet, basename='job-application')
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 router.register(r'auth',              AuthViewSet,                 basename='auth')
