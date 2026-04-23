@@ -1,3 +1,4 @@
+#nairobi jethouse models 
 from django.db import models
 import uuid
 
